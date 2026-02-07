@@ -1,8 +1,10 @@
+import logging
 import sys
 
 from database import Database, DatabaseMigrator
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     db = Database()
     db_migrator = DatabaseMigrator(db)
 

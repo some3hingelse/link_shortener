@@ -1,3 +1,3 @@
-from .core import Database, DatabaseMigrator, get_db, ShortLinkWithThatUrlAlreadyExists, ThisLengthPoolFilled
+from .core import Database, DatabaseMigrator, ShortLinkWithThatUrlAlreadyExists, ThisLengthPoolFilled, Link, database
 
-__all__ = ["Database", "DatabaseMigrator", "get_db", "ShortLinkWithThatUrlAlreadyExists", "ThisLengthPoolFilled"]
+__all__ = ["Database", "DatabaseMigrator", "ShortLinkWithThatUrlAlreadyExists", "ThisLengthPoolFilled", "Link", "database"]

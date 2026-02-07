@@ -1,8 +1,9 @@
+import logging
 import os
 import sqlite3
 from datetime import datetime
 
-import utils.links
+import utils
 from config import DbConfig
 from database.models import Link
 
@@ -13,6 +14,7 @@ class Database:
         self._config = DbConfig()
         self.connection = sqlite3.connect(self._config.db_filename.get_secret_value())
         self.cursor = self.connection.cursor()
+        self._logger= logging.getLogger(self.__class__.__name__)
 
     def get_link_by_short_url(self, short_url: str) -> Link | None:
         """
@@ -105,6 +107,7 @@ class DatabaseMigrator:
     def __init__(self, db: Database):
         self._db = db
         self._migrations_dir = os.path.dirname(os.path.realpath(__file__))+"/migrations/"
+        self._logger= logging.getLogger(self.__class__.__name__)
         try:
             self._get_current_version()
         except sqlite3.OperationalError:
@@ -168,6 +171,7 @@ class DatabaseMigrator:
         for query in code:
             try:
                 self._db.cursor.execute(query)
+                self._logger.info(query)
             except sqlite3.OperationalError as e:
                 raise MigrationError(f"Upgrade to {migration_filename} error:\n" + e.__str__())
 
@@ -230,10 +234,3 @@ class ShortLinkWithThatUrlAlreadyExists(Exception): pass
 class ThisLengthPoolFilled(Exception): pass
 
 database = Database()
-
-async def get_db():
-    """
-    Функция для dependency injection в контроллеры FastApi
-    Для применения нужно обернуть аргумент функции контроллера в Depends из fastapi.param_functions
-    """
-    yield database
