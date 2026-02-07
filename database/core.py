@@ -9,13 +9,21 @@ from database.models import Link
 
 class Database:
     def __init__(self):
+        """Инициализирует подключение к SQLite."""
         self._config = DbConfig()
         self.connection = sqlite3.connect(self._config.db_filename.get_secret_value())
         self.cursor = self.connection.cursor()
 
     def get_link_by_short_url(self, short_url: str) -> Link | None:
+        """
+        Находит ссылку по короткому URL.
+
+        :param short_url: Короткий URL для поиска
+        :return: Объект Link или None, если ссылка не найдена
+        """
         self.cursor.execute(
-            "SELECT * FROM links WHERE short_url = ? LIMIT 1",
+            "SELECT * FROM links WHERE short_url = ? AND banned IS false "
+            "AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP) LIMIT 1",
             (utils.encrypt_aes256_base64(short_url),)
         )
         result = self.cursor.fetchone()
@@ -24,17 +32,56 @@ class Database:
             return None
         return Link(*result)
 
-    def create_link(self, original_url: str, short_length: int, expires_at: datetime | None = None) -> str:
+    def get_all_links(self) -> list[list[str]]:
+        """
+        Получает все активные ссылки из базы данных.
+
+        :return: Список ссылок в формате [id, short_url, original_url]
+        """
+        self.cursor.execute(
+            "SELECT * FROM links WHERE banned IS false AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)",
+        )
+        raw_result = self.cursor.fetchall()
+        processed_result = []
+        for record in raw_result:
+            processed_result.append([record[0], record[1], record[2]])
+        return processed_result
+
+    def create_link(self, original_url: str, short_length: int, expires_at: datetime | None = None) -> tuple[int, str]:
+        """
+        Создает новую короткую ссылку в базе данных.
+
+        :param original_url: Оригинальный URL для сокращения
+        :param short_length: Длина генерируемой короткой строки
+        :param expires_at: Опциональная дата истечения срока действия
+        :return: Кортеж (id созданной ссылки, сгенерированный короткий URL)
+        :raises ShortLinkWithThatUrlAlreadyExists: Если ссылка с таким URL уже существует
+        """
         original_url_encoded = utils.encrypt_aes256_base64(original_url)
         short_url = utils.generate_random_string(short_length)
         short_url_encoded = utils.encrypt_aes256_base64(short_url)
-        self.cursor.execute(
-            "INSERT INTO links(short_url, original_url, expires_at, short_url_length) VALUES(?,?,?,?)",
-            (short_url_encoded, original_url_encoded, expires_at, short_length,),
-        )
-        self.connection.commit()
+        try:
+            self.cursor.execute(
+                "INSERT INTO links(short_url, original_url, expires_at, short_url_length) VALUES(?,?,?,?)",
+                (short_url_encoded, original_url_encoded, expires_at, short_length,),
+            )
+            self.connection.commit()
+            link_id = self.cursor.lastrowid
+        except sqlite3.IntegrityError as e:
+            if e.args[0] == "UNIQUE constraint failed: links.original_url":
+                raise ShortLinkWithThatUrlAlreadyExists("Short link with that url already exists")
 
-        return short_url
+        return link_id, short_url
+
+    def add_click_on_link(self, link_id: int, metadata: str):
+        """
+        Регистрирует клик по ссылке в статистике.
+
+        :param link_id: ID ссылки, по которой был клик
+        :param metadata: Метаданные клика (User-Agent, IP и т.д.)
+        """
+        self.cursor.execute("INSERT INTO clicks(link_id, metadata) VALUES(?,?)", (link_id, metadata,))
+        self.connection.commit()
 
 
 class DatabaseMigrator:
@@ -166,3 +213,13 @@ class DatabaseMigrator:
 
 
 class MigrationError(Exception): pass
+class ShortLinkWithThatUrlAlreadyExists(Exception): pass
+
+database = Database()
+
+async def get_db():
+    """
+    Функция для dependency injection в контроллеры FastApi
+    Для применения нужно обернуть аргумент функции контроллера в Depends из fastapi.param_functions
+    """
+    yield database

@@ -1,3 +1,3 @@
-from .core import Database, DatabaseMigrator
+from .core import Database, DatabaseMigrator, get_db
 
-__all__ = ['Database', 'DatabaseMigrator']
+__all__ = ['Database', 'DatabaseMigrator', 'get_db']
