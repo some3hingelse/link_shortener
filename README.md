@@ -4,11 +4,11 @@
 
 Сервис-сократитель ссылок
 
-Swagger располагается по адресу http://host:port/docs
+Swagger располагается по адресу http://localhost:8000/docs
 
-Создание ссылки http://host:port/shorten [POST]
+Создание ссылки http://localhost:8000/api/v1/shorten [POST]
 
-Получение ссылки http://host:port/{short}
+Получение ссылки http://localhost:8000/{short}
 
 ## Используемые технологии:
 - Python 3.12.10
@@ -17,6 +17,7 @@ Swagger располагается по адресу http://host:port/docs
 - Кеш - Redis
 - API метод + эндпоинт с редиректом - FastAPI
 - Валидация - pydantic
+- Тесты - pytest+unittest
 
 ## Настройка и запуск
 ### Запуск приложения
