@@ -1,25 +1,27 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, HTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse
 
 import cache
-from database import Database, get_db
+from database import database
 from api.dto.links import CreateShortLinkRequest
-from database.core import ShortLinkWithThatUrlAlreadyExists
+from database import ShortLinkWithThatUrlAlreadyExists, ThisLengthPoolFilled
 
 app = FastAPI(lifespan=cache.cache_warmup)
 
 
 @app.post("/api/v1/shorten", response_class=JSONResponse)
-async def shorten(link: CreateShortLinkRequest, database: Database = Depends(get_db)):
+async def shorten(link: CreateShortLinkRequest):
     """
-    Создает короткую ссылку для указанного URL.
+    Создает короткую ссылку для указанного URL с указанной длиной.
     """
     try:
         link_id, short_url = database.create_link(link.url.__str__(), link.length)
         cache.set_short_link(short_url, link.url.__str__(), link_id)
     except ShortLinkWithThatUrlAlreadyExists:
         raise HTTPException(status_code=400, detail="Short link with that url already exists")
+    except ThisLengthPoolFilled:
+        raise HTTPException(status_code=400, detail="Pool of short links with that length is filled")
     except Exception as e:
         print(e)
         raise HTTPException(status_code=503, detail="Technical troubles, please try again later")
@@ -28,7 +30,7 @@ async def shorten(link: CreateShortLinkRequest, database: Database = Depends(get
 
 
 @app.get("/{short_url}", response_class=JSONResponse)
-async def redirect_to_original_link(short_url: str, request: Request, database: Database = Depends(get_db)):
+async def redirect_to_original_link(short_url: str, request: Request):
     """
     Перенаправляет по короткой ссылке на оригинальный URL.
     """
@@ -36,14 +38,13 @@ async def redirect_to_original_link(short_url: str, request: Request, database: 
         short_link = cache.get_short_link(short_url)
         if not short_link:
             short_link = database.get_link_by_short_url(short_url)
-        if not short_link:
-            raise HTTPException(status_code=404, detail="Short link with that url does not exist")
-
-        link_id = short_link.id
-        original_url = short_link.original_url
-    except:
+    except Exception as e:
         raise HTTPException(status_code=503, detail="Technical troubles, please try again later")
+    if not short_link:
+        raise HTTPException(status_code=404, detail="Short link with that url does not exist")
 
+    link_id = short_link.id
+    original_url = short_link.original_url
 
     metadata = "User-Agent: "+request.headers.get("User-Agent")+"\nIP: "+request.client.host
     database.add_click_on_link(link_id, metadata)

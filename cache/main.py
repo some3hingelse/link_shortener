@@ -19,7 +19,7 @@ def set_short_link(short_url: str, original_url: str, link_id: int):
     :param original_url: Оригинальный URL
     :param link_id: ID ссылки в базе данных
     """
-    r.set(encrypt_aes256_base64(short_url), encrypt_aes256_base64(original_url)+"_"+str(link_id))
+    r.set(encrypt_aes256_base64(short_url), encrypt_aes256_base64(original_url) + "_" + str(link_id))
 
 
 @dataclasses.dataclass
@@ -46,8 +46,12 @@ def get_short_link(short_url) -> LinkCached | None:
 
 @asynccontextmanager
 async def cache_warmup(_):
+    """
+    Функция прогрева кешей.
+    Получает все ссылки из таблицы links и вносит в Redis.
+    Вызывается при запуске через FastApi lifespan
+    """
     links = database.get_all_links()
     for link in links:
-        r.set(link[1], link[2]+"_"+str(link[0]))
+        r.set(link[1], link[2] + "_" + str(link[0]))
     yield
-
