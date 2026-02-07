@@ -1,4 +1,4 @@
-from pydantic import SecretStr, field_validator
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings
 
 
