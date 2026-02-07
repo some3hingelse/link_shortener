@@ -1,5 +1,4 @@
 import pytest
-import base64
 from utils import encrypt_aes256_base64, decrypt_aes256_base64_bytes, generate_random_string
 
 
