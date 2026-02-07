@@ -58,7 +58,7 @@ class Database:
         :raises ShortLinkWithThatUrlAlreadyExists: Если ссылка с таким URL уже существует
         """
         original_url_encoded = utils.encrypt_aes256_base64(original_url)
-        short_url = utils.generate_random_string(short_length)
+        short_url = self._generate_short_url(short_length)
         short_url_encoded = utils.encrypt_aes256_base64(short_url)
         try:
             self.cursor.execute(
@@ -82,6 +82,19 @@ class Database:
         """
         self.cursor.execute("INSERT INTO clicks(link_id, metadata) VALUES(?,?)", (link_id, metadata,))
         self.connection.commit()
+
+    def _check_short_urls_pool_filled(self, length):
+        self.cursor.execute("SELECT COUNT(*) FROM links WHERE short_url_length = ?", (length,))
+        return self.cursor.fetchone()[0] >= length ** utils.charset_for_string_generate
+
+    def _generate_short_url(self, length: int) -> str:
+        if self._check_short_urls_pool_filled(length):
+            raise ThisLengthPoolFilled("Pool of short urls with that length is filled")
+        while True:
+            short_url = utils.generate_random_string(length)
+            if not self.get_link_by_short_url(short_url):
+                return short_url
+
 
 
 class DatabaseMigrator:
@@ -214,6 +227,7 @@ class DatabaseMigrator:
 
 class MigrationError(Exception): pass
 class ShortLinkWithThatUrlAlreadyExists(Exception): pass
+class ThisLengthPoolFilled(Exception): pass
 
 database = Database()
 

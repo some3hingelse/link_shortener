@@ -5,7 +5,7 @@ from starlette.responses import JSONResponse, RedirectResponse
 import cache
 from database import Database, get_db
 from api.dto.links import CreateShortLinkRequest
-from database.core import ShortLinkWithThatUrlAlreadyExists
+from database import ShortLinkWithThatUrlAlreadyExists, ThisLengthPoolFilled
 
 app = FastAPI(lifespan=cache.cache_warmup)
 
@@ -20,6 +20,8 @@ async def shorten(link: CreateShortLinkRequest, database: Database = Depends(get
         cache.set_short_link(short_url, link.url.__str__(), link_id)
     except ShortLinkWithThatUrlAlreadyExists:
         raise HTTPException(status_code=400, detail="Short link with that url already exists")
+    except ThisLengthPoolFilled:
+        raise HTTPException(status_code=400, detail="Pool of short links with that length is filled")
     except Exception as e:
         print(e)
         raise HTTPException(status_code=503, detail="Technical troubles, please try again later")

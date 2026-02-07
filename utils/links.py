@@ -9,7 +9,7 @@ from config import AESConfig
 
 
 aes_config = AESConfig()
-
+charset_for_string_generate = string.ascii_letters + string.digits
 
 def encrypt_aes256_base64(plaintext: str) -> str:
     """
@@ -79,5 +79,4 @@ def generate_random_string(length: int) -> str:
 
     :returns: Случайная строка из букв и цифр
     """
-    charset = string.ascii_letters + string.digits
-    return ''.join(secrets.choice(charset) for _ in range(length))
+    return ''.join(secrets.choice(charset_for_string_generate) for _ in range(length))
