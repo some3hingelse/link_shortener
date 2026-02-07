@@ -41,13 +41,9 @@ class Database:
         :return: Список ссылок в формате [id, short_url, original_url]
         """
         self.cursor.execute(
-            "SELECT * FROM links WHERE banned IS false AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)",
+            "SELECT id,short_url,original_url FROM links WHERE banned IS false AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)",
         )
-        raw_result = self.cursor.fetchall()
-        processed_result = []
-        for record in raw_result:
-            processed_result.append([record[0], record[1], record[2]])
-        return processed_result
+        return self.cursor.fetchall()
 
     def create_link(self, original_url: str, short_length: int, expires_at: datetime | None = None) -> tuple[int, str]:
         """

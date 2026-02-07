@@ -43,9 +43,6 @@ async def redirect_to_original_link(short_url: str, request: Request):
     if not short_link:
         raise HTTPException(status_code=404, detail="Short link with that url does not exist")
 
-    link_id = short_link.id
-    original_url = short_link.original_url
-
     metadata = "User-Agent: "+request.headers.get("User-Agent")+"\nIP: "+request.client.host
-    database.add_click_on_link(link_id, metadata)
-    return RedirectResponse(url=original_url)
+    database.add_click_on_link(short_link.id, metadata)
+    return RedirectResponse(url=short_link.original_url)
