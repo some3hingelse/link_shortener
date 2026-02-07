@@ -13,13 +13,14 @@ aes_config = AESConfig()
 
 def encrypt_aes256_base64(plaintext: str) -> str:
     """
-    Функция шифрования строки в aes-256 + base64
+    Шифрует строку с использованием AES-256 в режиме CBC с последующим кодированием в base64.
+
+    :param plaintext: Исходная строка для шифрования
+    :return: Зашифрованная в AES-256 и закодированная в base64 строка
+    :raises ValueError: Если ключ или IV неверной длины
     """
     key_b64 = aes_config.aes_key_b64.get_secret_value()
     iv_b64 = aes_config.aes_iv_b64.get_secret_value()
-
-    if not key_b64 or not iv_b64:
-        raise ValueError("AES_KEY_B64 и AES_IV_B64 должны быть установлены в переменных окружения")
 
     key = base64.b64decode(key_b64)
     iv = base64.b64decode(iv_b64)
@@ -41,7 +42,11 @@ def encrypt_aes256_base64(plaintext: str) -> str:
 
 def decrypt_aes256_base64_bytes(encrypted_base64: str) -> str:
     """
-    Функция дешифрования строки из base64 + aes-256
+    Дешифрует строку из base64 + AES-256 в режиме CBC.
+
+    :param encrypted_base64: Зашифрованная строка в формате base64
+    :return: Расшифрованная исходная строка
+    :raises ValueError: Если ключ или IV неверной длины
     """
     key_b64 = aes_config.aes_key_b64.get_secret_value()
     iv_b64 = aes_config.aes_iv_b64.get_secret_value()

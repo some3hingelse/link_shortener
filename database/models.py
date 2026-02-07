@@ -89,28 +89,27 @@ class Link:
     @property
     def short_url(self) -> str:
         """Расшифрованный короткий URL."""
-        try:
-            return utils.decrypt_aes256_base64_bytes(self._short_url)
-        except Exception as e:
-            print(e)
-            return self._short_url
+        return self._short_url
 
     @short_url.setter
     def short_url(self, value: str) -> None:
-        """Установка короткого URL."""
-        self._short_url = value
+        """Установка короткого URL в расшифрованном виде."""
+        try:
+            self._short_url = utils.decrypt_aes256_base64_bytes(value)
+        except Exception as e:
+            print(e)
+            self._short_url = value
 
     @property
     def original_url(self) -> str:
         """Расшифрованный оригинальный URL."""
-        try:
-            return utils.decrypt_aes256_base64_bytes(self._original_url)
-        except Exception as e:
-            print(e)
-            return self._original_url
+        return self._original_url
 
     @original_url.setter
     def original_url(self, value: str) -> None:
-        """Установка оригинального URL."""
-        self._original_url = value
-
+        """Установка оригинального URL в расшифрованном виде."""
+        try:
+            self._original_url = utils.decrypt_aes256_base64_bytes(value)
+        except Exception as e:
+            print(e)
+            self._original_url = value
