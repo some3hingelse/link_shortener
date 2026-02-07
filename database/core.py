@@ -85,7 +85,7 @@ class Database:
 
     def _check_short_urls_pool_filled(self, length):
         self.cursor.execute("SELECT COUNT(*) FROM links WHERE short_url_length = ?", (length,))
-        return self.cursor.fetchone()[0] >= length ** utils.charset_for_string_generate
+        return self.cursor.fetchone()[0] >= length ** len(utils.charset_for_string_generate)
 
     def _generate_short_url(self, length: int) -> str:
         if self._check_short_urls_pool_filled(length):
